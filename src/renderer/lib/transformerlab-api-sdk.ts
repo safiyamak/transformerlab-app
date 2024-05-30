@@ -577,20 +577,33 @@ function convertSlashInUrl(url: string) {
 
 Endpoints.Dataset = {
   Gallery: () => API_URL() + 'data/gallery',
-  Info: (datasetId: string) => API_URL() + 'data/info?dataset_id=' + datasetId,
-  Preview: (datasetId: string, offset: number, limit: number) =>
+  Info: (datasetId: string, config_name?: string) =>
+    API_URL() +
+    'data/info?dataset_id=' +
+    datasetId +
+    (config_name ? '&config_name=' + config_name : ''),
+  Preview: (
+    datasetId: string,
+    offset: number,
+    limit: number,
+    config_name?: string
+  ) =>
     API_URL() +
     'data/preview?dataset_id=' +
     datasetId +
     '&offset=' +
     offset +
     '&limit=' +
-    limit,
+    limit +
+    (config_name ? '&config_name=' + config_name : ''),
   Delete: (datasetId: string) =>
     API_URL() + 'data/delete?dataset_id=' + datasetId,
   Create: (datasetId: string) => API_URL() + 'data/new?dataset_id=' + datasetId,
-  Download: (datasetId: string) =>
-    API_URL() + 'data/download?dataset_id=' + datasetId,
+  Download: (datasetId: string, config_name?: string) =>
+    API_URL() +
+    'data/download?dataset_id=' +
+    datasetId +
+    (config_name ? '&config_name=' + config_name : ''),
   LocalList: () => API_URL() + 'data/list',
   FileUpload: (datasetId: string) =>
     API_URL() + 'data/fileupload?dataset_id=' + datasetId,

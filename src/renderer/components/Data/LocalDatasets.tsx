@@ -16,7 +16,6 @@ import {
 import { PlusIcon } from 'lucide-react';
 import DatasetCard from './DatasetCard';
 import { SearchIcon } from 'lucide-react';
-import { filterByFilters } from 'renderer/lib/utils';
 
 import * as chatAPI from '../../lib/transformerlab-api-sdk';
 import NewDatasetModal from './NewDatasetModal';
@@ -106,6 +105,7 @@ export default function LocalDatasets() {
           padding: 2,
         }}
       >
+        {data && console.log(data)}
         <Grid container spacing={2} sx={{ flexGrow: 1 }}>
           {data &&
             filterByFiltersDatasetID(data, searchText).map((row) => (
@@ -113,13 +113,14 @@ export default function LocalDatasets() {
                 <DatasetCard
                   name={row?.dataset_id}
                   size={row?.size}
-                  key={row.id}
                   description={row?.description}
                   repo={row.huggingfacerepo}
                   location={row?.location}
                   downloaded={true}
                   local={true}
+                  config_names
                   parentMutate={mutate}
+                  selectedConfig={row.config_name}
                 />
               </Grid>
             ))}

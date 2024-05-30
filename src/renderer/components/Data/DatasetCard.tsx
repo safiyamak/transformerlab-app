@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Button,
@@ -9,6 +9,10 @@ import {
   ModalClose,
   ModalDialog,
   Typography,
+  DialogTitle,
+  Box,
+  Autocomplete,
+  Input,
 } from '@mui/joy';
 import {
   DownloadIcon,
@@ -33,11 +37,46 @@ export default function DatasetCard({
   location,
   parentMutate,
   local,
+  config_names,
+  selectedConfig,
 }) {
   const [installing, setInstalling] = useState(null);
   const [previewDatasetModalOpen, setPreviewDatasetModalOpen] = useState(false);
   const [datasetInfoModalOpen, setDatasetInfoModalOpen] = useState(false);
+  const [openConfigModal, setOpenConfigModal] = useState(false);
+  const [configSelection, setConfigSelection] = useState(null);
+  const [isError, setIsError] = useState(false);
+  let fetchPromise = null;
+  // Datasets can be very large so do this asynchronously
+  async function downloadDataset(fetchPromise) {
+    try {
+      const response = await fetchPromise;
 
+      if (!response.ok) {
+        console.log(response);
+        throw new Error(`HTTP Status: ${response.status}`);
+      }
+
+      const response_json = await response.json();
+
+      if (response_json?.status == 'error') {
+        throw new Error(response_json.message);
+      }
+
+      setInstalling(null);
+    } catch (error) {
+      setInstalling(null);
+      alert('Download failed:\n' + error);
+    }
+  }
+  useEffect(() => {
+    if (installing === true && configSelection != null) {
+      fetchPromise = fetch(
+        chatAPI.Endpoints.Dataset.Download(repo, configSelection)
+      );
+      downloadDataset(fetchPromise);
+    }
+  }, [installing, configSelection]);
   return (
     <>
       {previewDatasetModalOpen && (
@@ -133,27 +172,22 @@ export default function DatasetCard({
                 )
               }
               onClick={() => {
-                setInstalling(true);
-
-                // Datasets can be very large so do this asynchronously
-                fetch(chatAPI.Endpoints.Dataset.Download(repo))
-                  .then((response) => {
-                    if (!response.ok) {
-                      console.log(response);
-                      throw new Error(`HTTP Status: ${response.status}`);
-                    }
-                    return response.json();
-                  })
-                  .then((response_json) => {
-                    if (response_json?.status == 'error') {
-                      throw new Error(response_json.message);
-                    }
-                    setInstalling(null);
-                  })
-                  .catch((error) => {
-                    setInstalling(null);
-                    alert('Download failed:\n' + error);
-                  });
+                if (config_names.length > 1) {
+                  setOpenConfigModal(true);
+                  if (installing === true && configSelection != null) {
+                    fetchPromise = fetch(
+                      chatAPI.Endpoints.Dataset.Download(repo, configSelection)
+                    );
+                    console.log(configSelection);
+                    downloadDataset(fetchPromise);
+                  }
+                } else {
+                  setInstalling(true);
+                  fetchPromise = fetch(
+                    chatAPI.Endpoints.Dataset.Download(repo)
+                  );
+                  downloadDataset(fetchPromise);
+                }
               }}
             >
               {downloaded
@@ -163,6 +197,62 @@ export default function DatasetCard({
                 : 'Download'}{' '}
             </Button>
           )}
+          <Modal
+            open={openConfigModal}
+            onClose={() => {
+              setOpenConfigModal(false);
+              setInstalling(null);
+            }}
+          >
+            <ModalDialog
+              sx={{
+                width: '50vw',
+                transform: 'translate(-50%, -50%)',
+                top: '50%',
+                overflow: 'auto',
+                maxHeight: '20vh',
+                minHeight: '20vh',
+                height: '100%',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '20px',
+                }}
+              >
+                Please select the config name you would like to use:
+                <Autocomplete
+                  placeholder="Select here"
+                  options={config_names}
+                  selectOnFocus
+                  onChange={(event, newValue) => {
+                    setConfigSelection(newValue);
+                    setIsError(false);
+                  }}
+                ></Autocomplete>
+                <Button
+                  onClick={() => {
+                    if (configSelection != null) {
+                      setOpenConfigModal(false);
+                      setIsError(false);
+                      setInstalling(true);
+                    } else {
+                      setIsError(true);
+                    }
+                  }}
+                >
+                  Submit
+                </Button>
+                {isError && (
+                  <Typography>
+                    Please select a config name before submitting.
+                  </Typography>
+                )}
+              </Box>
+            </ModalDialog>
+          </Modal>
         </CardContent>
       </Card>
     </>

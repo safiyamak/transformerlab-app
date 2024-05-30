@@ -80,8 +80,10 @@ export default function DataStore() {
                   repo={row.huggingfacerepo}
                   downloaded={row.downloaded}
                   local={false}
+                  config_names={row.config_names}
                   location={undefined}
                   parentMutate={mutate}
+                  selectedConfig
                 />
               </Grid>
             ))}
